@@ -1,0 +1,137 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Upload, Download, Image as ImageIcon, X, Star, Heart, Smile } from 'lucide-react';
+
+// 国庆主题模板数据
+const NATIONAL_DAY_TEMPLATES = [
+  { id: 0, name: '红旗飘扬', description: '五星红旗背景', color: '#FF0000', type: 'flag' },
+  { id: 1, name: '天安门', description: '天安门城楼', color: '#FFD700', type: 'architecture' },
+  { id: 2, name: '烟花绽放', description: '绚丽烟花效果', color: '#FF4500', type: 'fireworks' },
+  { id: 3, name: '灯笼高挂', description: '传统红灯笼', color: '#DC143C', type: 'decorations' },
+  { id: 4, name: '和平鸽', description: '飞翔的和平鸽', color: '#FFFFFF', type: 'symbols' },
+  { id: 5, name: '长城', description: '雄伟长城', color: '#8B4513', type: 'architecture' },
+  { id: 6, name: '华表', description: '庄严华表', color: '#FFA500', type: 'symbols' },
+  { id: 7, name: '国徽', description: '金色国徽', color: '#FFD700', type: 'symbols' },
+  { id: 8, name: '牡丹花', description: '富贵牡丹', color: '#FF1493', type: 'flowers' },
+  { id: 9, name: '祥云', description: '吉祥祥云', color: '#FF6347', type: 'patterns' },
+  { id: 10, name: '金龙', description: '腾飞金龙', color: '#FFD700', type: 'symbols' },
+  { id: 11, name: '福字', description: '红色福字', color: '#FF0000', type: 'text' },
+  { id: 12, name: '中国结', description: '传统中国结', color: '#DC143C', type: 'decorations' },
+  { id: 13, name: '舞狮', description: '喜庆舞狮', color: '#FF4500', type: 'culture' },
+  { id: 14, name: '锣鼓', description: '欢庆锣鼓', color: '#FF6347', type: 'culture' },
+  { id: 15, name: '彩带', description: '飘扬彩带', color: '#FFD700', type: 'decorations' },
+  { id: 16, name: '气球', description: '节日气球', color: '#FF1493', type: 'decorations' },
+  { id: 17, name: '五角星', description: '闪亮五角星', color: '#FFD700', type: 'symbols' },
+  { id: 18, name: '国旗边框', description: '国旗样式边框', color: '#FF0000', type: 'border' },
+  { id: 19, name: '国庆文字', description: '国庆快乐文字', color: '#FFFFFF', type: 'text' }
+];
+
+const App = () => {
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedTemplate, setSelectedTemplate] = useState(0);
+  const [processedImage, setProcessedImage] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [dragOver, setDragOver] = useState(false);
+  
+  const fileInputRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  // 处理图片上传
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // 验证文件类型
+    if (!file.type.startsWith('image/')) {
+      alert('请上传图片文件（JPG、PNG等格式）！');
+      return;
+    }
+
+    // 验证文件大小（5MB以内）
+    if (file.size > 5 * 1024 * 1024) {
+      alert('图片大小不能超过5MB！');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        setImageSize({ width: img.width, height: img.height });
+        setSelectedImage(e.target.result);
+        setProcessedImage(null);
+      };
+      img.onerror = () => {
+        alert('图片加载失败，请重试！');
+      };
+      img.src = e.target.result;
+    };
+    reader.onerror = () => {
+      alert('文件读取失败，请重试！');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // 拖拽上传功能
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      const event = { target: { files: [file] } };
+      handleImageUpload(event);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setDragOver(false);
+  };
+
+  // 应用模板效果
+  const applyTemplate = (ctx, size, template) => {
+    ctx.save();
+    
+    // 根据模板类型应用不同的效果
+    switch(template.type) {
+      case 'flag':
+        // 红旗效果
+        const gradient = ctx.createLinearGradient(0, 0, size, size);
+        gradient.addColorStop(0, 'rgba(255, 0, 0, 0.6)');
+        gradient.addColorStop(1, 'rgba(200, 0, 0, 0.8)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, size, size);
+        
+        // 绘制五角星
+        ctx.fillStyle = '#FFD700';
+        drawStar(ctx, size * 0.2, size * 0.2, size * 0.08, 5, 0.5);
+        drawStar(ctx, size * 0.35, size * 0.1, size * 0.03, 5, 0.5);
+        drawStar(ctx, size * 0.35, size * 0.25, size * 0.03, 5, 0.5);
+        drawStar(ctx, size * 0.45, size * 0.15, size * 0.03, 5, 0.5);
+        drawStar(ctx, size * 0.45, size * 0.3, size * 0.03, 5, 0.5);
+        break;
+        
+      case 'fireworks':
+        // 烟花效果
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(0, 0, size, size);
+        
+        for (let i = 0; i < 8; i++) {
+          drawFirework(ctx, 
+            Math.random() * size * 0.8 + size * 0.1, 
+            Math.random() * size * 0.4 + size * 0.1,
+            size * 0.08 + Math.random() * size * 0.04
+          );
+        }
+        break;
+        
+      case 'architecture':
+        // 建筑轮廓效果
+        ctx.strokeStyle = template.color;
+ 
